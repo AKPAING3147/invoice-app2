@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { login } from "@/app/service/auth/auth"
+import { useAuthStore } from "@/app/store/useAccountStore"
 
 type LoginFormValues = {
   email: string
@@ -32,6 +33,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter()
+   const setToken = useAuthStore((state) => state.setToken);
 
   const {
     register,
@@ -40,24 +42,27 @@ export function LoginForm({
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>()
 
-  const onSubmit = async (data: LoginFormValues) => {
-    try {
-      const res = await login(data.email, data.password)
+ const onSubmit = async (data: LoginFormValues) => {
+  try {
+    const res = await login(data.email, data.password)
 
-      console.log("Login successful:", res)
+    console.log("Login successful:", res)
 
-      // ✅ redirect after success
-      router.push("/dashboard")
-    } catch (error: any) {
-      console.error("Login failed:", error)
+    // ✅ store token (Zustand + localStorage)
+    setToken(res.token)
 
-      // ✅ show backend error on form
-      setError("password", {
-        type: "manual",
-        message: error?.message || "Invalid email or password",
-      })
-    }
+    // ✅ redirect
+    router.push("/dashboard")
+  } catch (error: any) {
+    console.error("Login failed:", error)
+
+    setError("password", {
+      type: "manual",
+      message: error?.message || "Invalid email or password",
+    })
   }
+}
+
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>

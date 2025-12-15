@@ -1,13 +1,14 @@
 "use client"
 import React from 'react'
-import { DashboardSection } from '../copmonent/page/DashboardSection'
+import InventorySection, { Inventory } from '../inventory/Section'
+
 
 import { AuthGuard } from '@/components/AuthGuard';
 
 export default function Page() {
   return (
     <AuthGuard>
-      <DashboardSection />
+      <Inventory />
     </AuthGuard>
   )
 }
