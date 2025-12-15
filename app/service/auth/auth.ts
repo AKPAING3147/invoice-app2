@@ -1,4 +1,4 @@
-const API_URL = "https://invoice-app-api.mms-it.com/api/v1"
+const API_URL = "/api/auth"
 
 export async function login(email: string, password: string) {
   const res = await fetch(`${API_URL}/login`, {

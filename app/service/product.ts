@@ -5,7 +5,7 @@ export interface Product {
     product_name: string;
     price: number;
     stock: number;
-    photo: string | null;
+    image: string | null;
     created_at: string;
     updated_at: string;
 }
@@ -21,26 +21,20 @@ export interface ProductParams {
 export interface CreateProductData {
     product_name: string;
     price: number;
-    stock?: number; // Optional based on collection but good to have
-    image?: File;
+    stock?: number;
+    image?: string | null;
 }
 
 export interface UpdateProductData {
     product_name?: string;
     price?: number;
     stock?: number;
-    image?: File;
+    image?: string | null;
 }
 
 export const fetchProducts = async (token: string, params: ProductParams = {}) => {
-    const query = new URLSearchParams();
-    if (params.limit) query.append("limit", params.limit.toString());
-    if (params.page) query.append("page", params.page.toString());
-    if (params.q) query.append("q", params.q);
-    if (params.sort_by) query.append("sort_by", params.sort_by);
-    if (params.sort_direction) query.append("sort_direction", params.sort_direction);
-
-    const res = await fetch(`${API_URL}/products?${query.toString()}`, {
+    // Params ignored for now in local API simple implementation
+    const res = await fetch(`${API_URL}/inventory`, {
         headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
@@ -55,7 +49,7 @@ export const fetchProducts = async (token: string, params: ProductParams = {}) =
 };
 
 export const getProduct = async (token: string, id: number) => {
-    const res = await fetch(`${API_URL}/products/${id}`, {
+    const res = await fetch(`${API_URL}/inventory/${id}`, {
         headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
@@ -70,18 +64,14 @@ export const getProduct = async (token: string, id: number) => {
 };
 
 export const createProduct = async (token: string, data: CreateProductData) => {
-    const res = await fetch(`${API_URL}/products`, {
+    const res = await fetch(`${API_URL}/inventory`, {
         method: "POST",
         headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             Accept: "application/json",
         },
-        body: JSON.stringify({
-            product_name: data.product_name,
-            price: data.price,
-            stock: data.stock
-        }),
+        body: JSON.stringify(data),
     });
 
     if (!res.ok) {
@@ -93,10 +83,7 @@ export const createProduct = async (token: string, data: CreateProductData) => {
 };
 
 export const updateProduct = async (token: string, id: number | string, data: UpdateProductData) => {
-    // The API seems to have separate endpoints for patching name/price, 
-    // or a PUT for the whole resource. Let's try PUT first as per collection "update"
-
-    const res = await fetch(`${API_URL}/products/${id}`, {
+    const res = await fetch(`${API_URL}/inventory/${id}`, {
         method: "PUT",
         headers: {
             Authorization: `Bearer ${token}`,
@@ -115,7 +102,7 @@ export const updateProduct = async (token: string, id: number | string, data: Up
 };
 
 export const deleteProduct = async (token: string, id: number | string) => {
-    const res = await fetch(`${API_URL}/products/${id}`, {
+    const res = await fetch(`${API_URL}/inventory/${id}`, {
         method: "DELETE",
         headers: {
             Authorization: `Bearer ${token}`,
@@ -130,3 +117,5 @@ export const deleteProduct = async (token: string, id: number | string) => {
 
     return res.json();
 };
+
+

@@ -2,8 +2,10 @@
 
 import { useForm } from "react-hook-form"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { signup } from "@/app/service/auth/auth"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import {
   Card,
   CardContent,
@@ -27,6 +29,7 @@ type SignupFormValues = {
 }
 
 export function SignupForm() {
+  const router = useRouter()
   const {
     register,
     handleSubmit,
@@ -48,7 +51,10 @@ export function SignupForm() {
 
       // success (redirect later)
       console.log("Signup success")
+      toast.success("Account created successfully")
+      router.push("/login")
     } catch (error: any) {
+      toast.error(error.message || "Signup failed")
       if (error?.errors) {
         Object.entries(error.errors).forEach(([field, messages]: any) => {
           setError(field as any, {

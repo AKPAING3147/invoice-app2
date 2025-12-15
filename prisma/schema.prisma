@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String
+  email    String   @unique
+  password String
+  products Product[]
+  customers Customer[]
+  vouchers Voucher[]
+}
+
+model Product {
+  id           Int     @id @default(autoincrement())
+  product_name String
+  price        Float
+  stock        Int
+  image        String?
+  userId       Int
+  user         User    @relation(fields: [userId], references: [id])
+}
+
+model Customer {
+  id      Int    @id @default(autoincrement())
+  name    String
+  email   String?
+  phone   String?
+  userId  Int
+  user    User   @relation(fields: [userId], references: [id])
+  vouchers Voucher[]
+}
+
+model Voucher {
+  id         Int      @id @default(autoincrement())
+  voucher_no String
+  date       DateTime @default(now())
+  total      Float
+  status     String   @default("UNPAID") // PAID, UNPAID
+  paidAmount Float    @default(0)
+  receiveDate DateTime?
+  customerId Int
+  customer   Customer @relation(fields: [customerId], references: [id])
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  items      String   // Storing items as JSON string for simplicity
+}

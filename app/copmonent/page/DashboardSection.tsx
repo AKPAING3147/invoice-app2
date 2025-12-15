@@ -65,35 +65,37 @@ export function DashboardSection() {
 
     const loadData = async () => {
       try {
-        // Load Profile
-        const userData = await getUserProfile(token);
-        setUser(userData.data || userData);
+        // Fetch Dashboard Stats
+        const statsRes = await fetch('/api/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (statsRes.ok) {
+          const data = await statsRes.json();
+          setStats({
+            revenue: 0, // Keeping 0 for now as it needs voucher aggregation or another API field
+            orders: data.voucherCount,
+            stock: data.productCount,
+            customers: data.customerCount
+          });
+          setUser({ ...user, name: data.userName, email: user?.email || "" } as UserProfile);
+        }
 
-        // Load Products
+        // Load Products for Low Stock
         const productData = await fetchProducts(token);
         const products: Product[] = Array.isArray(productData) ? productData : productData.data || [];
-
-        // Stats: Stock
-        const totalStock = products.reduce((acc, p) => acc + (p.stock || 0), 0);
         const lowStockItems = products.filter(p => (p.stock || 0) < 10);
         setLowStock(lowStockItems);
 
-        // Load Vouchers/Orders
+        // Load Recent Vouchers
+        // For now, we can skip full voucher load if we just want count, but we keep it for "Recent Sales" table
+        // Ideally we would have `fetchRecentVouchers` but `fetchVouchers` is fine for small scale
         const voucherData = await fetchVouchers(token);
         const vouchers: Voucher[] = Array.isArray(voucherData) ? voucherData : voucherData.data || [];
-
-        // Stats: Revenue, Orders, Customers
-        const totalRevenue = vouchers.reduce((acc, v) => acc + Number(v.net_total), 0);
-        const uniqueCustomers = new Set(vouchers.map(v => v.customer_email)).size;
-
-        setStats({
-          revenue: totalRevenue,
-          orders: vouchers.length,
-          stock: totalStock,
-          customers: uniqueCustomers
-        });
-
         setRecentSales(vouchers.slice(0, 5));
+
+        // Calculate Revenue manually from fetched vouchers for now
+        const revenue = vouchers.reduce((acc: number, v: any) => acc + (Number(v.total) || 0), 0);
+        setStats(prev => ({ ...prev, revenue: revenue }));
 
       } catch (e) {
         console.error("Dashboard load error", e);
@@ -203,7 +205,7 @@ export function DashboardSection() {
 
           <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
 
-            {/* Recent Sales Table */}
+            {/* Recent Orders */}
             <Card className="lg:col-span-5">
               <CardHeader>
                 <CardTitle>Recent Orders</CardTitle>
@@ -220,19 +222,20 @@ export function DashboardSection() {
                           {order.customer_name?.charAt(0) || "C"}
                         </div>
                         <div className="space-y-1">
-                          <p className="text-sm font-medium leading-none">{order.customer_name}</p>
-                          <p className="text-xs text-muted-foreground">{order.customer_email}</p>
+                          <p className="text-sm font-medium leading-none">{order.customer_name || `Customer #${order.customerId}`}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {order.date ? new Date(order.date).toLocaleDateString() : 'No Date'} · {order.customer_email || "No Email"}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <div className="font-medium text-sm">+${Number(order.net_total).toFixed(2)}</div>
+                        <div className="font-medium text-sm">+${Number(order.total).toFixed(2)}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-
             {/* Low Stock Alert */}
             <Card className="lg:col-span-2">
               <CardHeader>

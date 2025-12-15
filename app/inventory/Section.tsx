@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/app/store/useAccountStore";
+import { toast } from "sonner";
 import {
     fetchProducts,
     createProduct,
@@ -59,7 +60,8 @@ export function Inventory() {
     const [formData, setFormData] = useState({
         product_name: "",
         price: 0,
-        stock: 0, // Assuming API might support it, otherwise it's local only
+        stock: 0,
+        image: "" as string | null,
     });
 
     const loadProducts = async () => {
@@ -95,7 +97,7 @@ export function Inventory() {
 
     const handleAdd = () => {
         setEditingItem(null);
-        setFormData({ product_name: "", price: 0, stock: 0 });
+        setFormData({ product_name: "", price: 0, stock: 0, image: null });
         setIsModalOpen(true);
     };
 
@@ -105,6 +107,7 @@ export function Inventory() {
             product_name: item.product_name,
             price: item.price,
             stock: item.stock || 0,
+            image: item.image || null,
         });
         setIsModalOpen(true);
     };
@@ -115,8 +118,9 @@ export function Inventory() {
             try {
                 await deleteProduct(token, id);
                 setInventory((prev) => prev.filter((item) => item.id !== id));
+                toast.success("Product deleted successfully");
             } catch (err: any) {
-                alert(err.message);
+                toast.error(err.message || "Failed to delete product");
             }
         }
     };
@@ -140,8 +144,9 @@ export function Inventory() {
             }
             setIsModalOpen(false);
             loadProducts(); // Refresh to be sure
+            toast.success(editingItem ? "Product updated" : "Product created");
         } catch (err: any) {
-            alert(err.message);
+            toast.error(err.message || "Operation failed");
         }
     };
 
@@ -188,6 +193,7 @@ export function Inventory() {
                         <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                                 <tr>
+                                    <th className="p-4 text-left">Image</th>
                                     <th className="p-4 text-left">Name</th>
                                     {/* SKU/Category removed as API doesn't support them explicitly in this demo */}
                                     <th className="p-4 text-left">Stock</th>
@@ -203,8 +209,17 @@ export function Inventory() {
                                 ) : (
                                     inventory.map((item) => (
                                         <tr key={item.id} className="border-t hover:bg-muted/20 transition-colors">
+                                            <td className="p-4">
+                                                {item.image ? (
+                                                    <img src={item.image} alt={item.product_name} className="w-10 h-10 object-cover rounded" />
+                                                ) : (
+                                                    <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-xs">No img</div>
+                                                )}
+                                            </td>
                                             <td className="p-4">{item.product_name}</td>
-                                            <td className="p-4">{item.stock}</td>
+                                            <td className="p-4">
+                                                {item.stock === 0 ? <span className="text-red-500 font-medium">Out of Stock</span> : item.stock}
+                                            </td>
                                             <td className="p-4">${Number(item.price).toFixed(2)}</td>
                                             <td className="p-4 text-right flex justify-end gap-2">
                                                 <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
@@ -276,6 +291,24 @@ export function Inventory() {
                                                 />
                                             </Field>
                                         </div>
+                                        <Field>
+                                            <FieldLabel htmlFor="image">Image</FieldLabel>
+                                            <Input
+                                                id="image"
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        const reader = new FileReader();
+                                                        reader.onloadend = () => {
+                                                            setFormData({ ...formData, image: reader.result as string });
+                                                        };
+                                                        reader.readAsDataURL(file);
+                                                    }
+                                                }}
+                                            />
+                                        </Field>
                                     </FieldGroup>
                                 </CardContent>
                                 <div className="flex justify-end gap-2 mt-2">
