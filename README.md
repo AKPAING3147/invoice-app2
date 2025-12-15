@@ -1,41 +1,42 @@
 # Inventory Management System
 
-This is a **web-based Inventory Management System** built with **React, Next.js, and Tailwind CSS**. It allows users to manage products, track stock levels, and maintain a clean and efficient inventory workflow.
+A modern **Inventory Management System** built with **Next.js**, **TypeScript**, **Prisma**, **Shadcn UI**, **TailwindCSS**, **Neon Database**, and **JWT authentication**. This project is designed for managing products, inventory, and users efficiently with a clean and responsive interface.
 
-## Features
+---
 
-- **Product Management**  
-  - Add, update, and delete products  
-  - Assign product name, category, quantity, price, and description  
+## 🚀 Features
 
-- **Stock Tracking**  
-  - Monitor product stock levels  
-  - Receive alerts for low stock  
+- **User Authentication** using **JWT**.
+- **Admin Dashboard** for managing products and inventory.
+- **CRUD Operations** for products:
+  - Add, edit, delete products
+  - Track stock levels
+- **Responsive UI** built with **TailwindCSS** and **Shadcn UI** components.
+- **Database** using **PostgreSQL** on **Neon** with **Prisma ORM**.
+- **Secure** routes and API endpoints.
+- **Dark Mode Support** (optional).
 
-- **Dashboard**  
-  - View inventory statistics and trends  
-  - Quick overview of total products and low-stock items  
+---
 
-- **Search & Filter**  
-  - Search products by name or category  
-  - Filter products by stock status or category  
+## 🛠 Tech Stack
 
-- **Responsive UI**  
-  - Works on desktop, tablet, and mobile devices  
-  - Clean and modern interface using Tailwind CSS  
+| Technology        | Purpose                                     |
+|------------------|---------------------------------------------|
+| Next.js           | Frontend framework and server-side rendering |
+| TypeScript        | Type safety and better developer experience |
+| Prisma            | ORM for database management                  |
+| Tailwind CSS      | Styling and utility-first CSS framework      |
+| Shadcn UI         | Prebuilt UI components                       |
+| Neon              | PostgreSQL cloud database                     |
+| JWT               | Authentication and authorization             |
+| Vercel            | Deployment                                  |
 
-## Tech Stack
+---
 
-- **Frontend**: React, Next.js, TypeScript  
-- **Styling**: Tailwind CSS  
-- **State Management**: React Context / Redux (optional)  
-- **Forms & Validation**: React Hook Form  
-- **Data Storage**: Local storage or backend API (optional)  
+## 🔧 Installation
 
-## Installation
-
-1. Clone the repository:
+1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/inventory-management.git
+git clone https://github.com/your-username/inventory-management.git
 cd inventory-management
