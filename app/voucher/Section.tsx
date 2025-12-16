@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/app/store/useAccountStore";
+import { useLanguageStore } from "@/app/store/useLanguageStore";
+import { translations } from "@/lib/translations";
 import { toast } from "sonner";
 import { fetchVouchers, createVoucher, Voucher, VoucherItem } from "@/app/service/voucher";
 import { fetchCustomers, Customer } from "@/app/service/customer";
@@ -29,6 +32,9 @@ const Icons = {
 export function VoucherSection() {
     const router = useRouter();
     const { token, logout } = useAuthStore();
+    const { language } = useLanguageStore();
+    const t = translations[language];
+
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -70,8 +76,6 @@ export function VoucherSection() {
         if (!token) router.push("/login");
         else loadData();
     }, [token, router]);
-
-    const handleLogout = () => { logout(); router.push("/login"); };
 
     const addToCart = () => {
         const product = products.find(p => p.id.toString() === currentItemId);
@@ -139,7 +143,7 @@ export function VoucherSection() {
             printWindow.document.write(`
                 <html>
                 <head>
-                    <title>Print Voucher ${voucher.voucher_no}</title>
+                    <title>${t.print_title} ${voucher.voucher_no}</title>
                     <style>
                         body { font-family: sans-serif; padding: 20px; }
                         h1 { font-size: 24px; text-align: center; }
@@ -150,20 +154,20 @@ export function VoucherSection() {
                     </style>
                 </head>
                 <body>
-                    <h1>Voucher / Invoice</h1>
+                    <h1>${t.print_title}</h1>
                     <div class="header">
                         <div>
-                            <p><strong>Voucher:</strong> ${voucher.voucher_no}</p>
-                            <p><strong>Date:</strong> ${voucher.date ? new Date(voucher.date).toLocaleDateString() : '-'}</p>
-                            <p><strong>Receive Date:</strong> ${voucher.receiveDate ? new Date(voucher.receiveDate).toLocaleDateString() : '-'}</p>
+                            <p><strong>${t.voucher_no}:</strong> ${voucher.voucher_no}</p>
+                            <p><strong>${t.order_date}:</strong> ${voucher.date ? new Date(voucher.date).toLocaleDateString() : '-'}</p>
+                            <p><strong>${t.receive_date}:</strong> ${voucher.receiveDate ? new Date(voucher.receiveDate).toLocaleDateString() : '-'}</p>
                         </div>
                         <div>
-                            <p><strong>Customer:</strong> ${(voucher as any).customer?.name || 'Customer #' + voucher.customerId}</p>
+                            <p><strong>${t.customer}:</strong> ${(voucher as any).customer?.name || 'Customer #' + voucher.customerId}</p>
                         </div>
                     </div>
                     <table>
                         <thead>
-                            <tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Price</th><th style="text-align:right">Total</th></tr>
+                            <tr><th>${t.item}</th><th style="text-align:center">${t.qty}</th><th style="text-align:right">${t.price}</th><th style="text-align:right">${t.total}</th></tr>
                         </thead>
                         <tbody>
                             ${voucher.items.map(i => `
@@ -177,10 +181,10 @@ export function VoucherSection() {
                         </tbody>
                     </table>
                     <div class="total">
-                        <p>Total: $${voucher.total.toFixed(2)}</p>
-                        <p>Paid: ${(voucher.paidAmount || 0).toFixed(2)}</p>
-                        <p>Balance: ${(voucher.total - (voucher.paidAmount || 0)).toFixed(2)}</p>
-                        <p>Status: ${voucher.status || 'UNPAID'}</p>
+                        <p>${t.total}: $${voucher.total.toFixed(2)}</p>
+                        <p>${t.paid}: ${(voucher.paidAmount || 0).toFixed(2)}</p>
+                        <p>${t.balance}: ${(voucher.total - (voucher.paidAmount || 0)).toFixed(2)}</p>
+                        <p>${t.status}: ${voucher.status || 'UNPAID'}</p>
                     </div>
                     <script>window.print();</script>
                 </body>
@@ -197,29 +201,21 @@ export function VoucherSection() {
 
     return (
         <div className="flex h-screen bg-muted/20 font-sans">
-            <aside className="w-64 bg-background border-r hidden md:flex flex-col p-4 space-y-4">
-                <h1 className="font-bold text-lg">InventoryApp</h1>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/dashboard")}>Dashboard</Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/product")}>Inventory</Button>
-                <Button variant="secondary" className="w-full" onClick={() => router.push("/voucher")}>Orders</Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/customer")}>Customers</Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/profile")}>Settings</Button>
-                <Button variant="outline" className="w-full mt-auto" onClick={handleLogout}>Logout</Button>
-            </aside>
+            <Sidebar />
 
             <main className="flex-1 p-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">Orders / Vouchers</h2>
+                    <h2 className="text-2xl font-bold">{t.orders}</h2>
                     <div className="flex gap-2">
                         <input
                             type="text"
-                            placeholder="Search voucher or customer..."
+                            placeholder={t.search_placeholder}
                             className="border p-2 rounded w-64"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                         <Button className="flex items-center gap-2" onClick={() => setIsModalOpen(true)}>
-                            <Icons.Plus className="h-4 w-4" /> Create Order
+                            <Icons.Plus className="h-4 w-4" /> {t.create_order}
                         </Button>
                     </div>
                 </div>
@@ -229,13 +225,13 @@ export function VoucherSection() {
                         <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                                 <tr>
-                                    <th className="p-4 text-left">Voucher #</th>
-                                    <th className="p-4 text-left">Customer</th>
-                                    <th className="p-4 text-left">Order Date</th>
-                                    <th className="p-4 text-left">Receive Date</th>
-                                    <th className="p-4 text-center">Status</th>
-                                    <th className="p-4 text-right">Total</th>
-                                    <th className="p-4">Action</th>
+                                    <th className="p-4 text-left">{t.voucher_no}</th>
+                                    <th className="p-4 text-left">{t.customer}</th>
+                                    <th className="p-4 text-left">{t.order_date}</th>
+                                    <th className="p-4 text-left">{t.receive_date}</th>
+                                    <th className="p-4 text-center">{t.status}</th>
+                                    <th className="p-4 text-right">{t.total}</th>
+                                    <th className="p-4">{t.action}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -257,7 +253,7 @@ export function VoucherSection() {
                                             </td>
                                             <td className="p-4 text-right">
                                                 <div>${Number(v.total).toFixed(2)}</div>
-                                                <div className="text-xs text-muted-foreground">Paid: ${(v.paidAmount || 0).toFixed(2)}</div>
+                                                <div className="text-xs text-muted-foreground">{t.paid}: ${(v.paidAmount || 0).toFixed(2)}</div>
                                             </td>
                                             <td className="p-4">
                                                 <Button variant="outline" size="sm" onClick={() => handlePrint(v)}>Print</Button>
@@ -274,7 +270,7 @@ export function VoucherSection() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                         <Card className="w-full max-w-2xl p-4 flex flex-col max-h-[90vh]">
                             <CardHeader className="flex flex-row justify-between items-center">
-                                <CardTitle>Create Order</CardTitle>
+                                <CardTitle>{t.create_order}</CardTitle>
                                 <Button variant="ghost" size="icon" onClick={() => setIsModalOpen(false)}>
                                     <Icons.X className="h-4 w-4" />
                                 </Button>
@@ -282,7 +278,7 @@ export function VoucherSection() {
                             <CardContent className="space-y-4 overflow-y-auto flex-1">
                                 {/* Customer Select */}
                                 <div>
-                                    <label className="text-sm font-medium">Customer</label>
+                                    <label className="text-sm font-medium">{t.customer}</label>
                                     <select
                                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                         value={selectedCustomer}
@@ -297,7 +293,7 @@ export function VoucherSection() {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="text-sm font-medium">Order Date</label>
+                                        <label className="text-sm font-medium">{t.order_date}</label>
                                         <input
                                             type="date"
                                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -306,7 +302,7 @@ export function VoucherSection() {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm font-medium">Receive Date</label>
+                                        <label className="text-sm font-medium">{t.receive_date}</label>
                                         <input
                                             type="date"
                                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
@@ -337,20 +333,20 @@ export function VoucherSection() {
                                             onChange={e => setCurrentQty(Number(e.target.value))}
                                             min={1}
                                         />
-                                        <Button type="button" onClick={addToCart}>Add</Button>
+                                        <Button type="button" onClick={addToCart}>{t.add}</Button>
                                     </div>
                                 </div>
 
                                 {/* Cart List */}
                                 <div className="border p-4 rounded-md">
-                                    <h4 className="font-medium text-sm mb-2">Cart</h4>
+                                    <h4 className="font-medium text-sm mb-2">{t.cart}</h4>
                                     {cart.length === 0 ? <p className="text-sm text-muted-foreground">Empty</p> : (
                                         <table className="w-full text-sm">
                                             <thead>
                                                 <tr className="border-b">
-                                                    <th className="text-left">Item</th>
-                                                    <th className="text-center">Qty</th>
-                                                    <th className="text-right">Total</th>
+                                                    <th className="text-left">{t.item}</th>
+                                                    <th className="text-center">{t.qty}</th>
+                                                    <th className="text-right">{t.total}</th>
                                                     <th className="w-8"></th>
                                                 </tr>
                                             </thead>
@@ -377,7 +373,7 @@ export function VoucherSection() {
 
                                 <div className="grid grid-cols-2 gap-4 items-end">
                                     <div>
-                                        <label className="text-sm font-medium">Paid Amount ($)</label>
+                                        <label className="text-sm font-medium">{t.paid_amount} ($)</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -387,8 +383,7 @@ export function VoucherSection() {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm font-medium">Payment Status</label>
-                                        {/* Status is automatically calculated based on paid amount vs total, or manual override? User asked to "decide". Let's disable manual status if paid amount is logic? Or give user freedom. Let's keep dropdown but auto-select logic could be nice. For now, manual. */}
+                                        <label className="text-sm font-medium">{t.payment_status}</label>
                                         <select
                                             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                             defaultValue="UNPAID"
@@ -401,14 +396,14 @@ export function VoucherSection() {
                                     </div>
                                 </div>
                                 <div className="text-right text-sm">
-                                    <span className="font-bold">Remaining Balance: </span>
+                                    <span className="font-bold">{t.remaining_balance}: </span>
                                     ${(cart.reduce((a, b) => a + b.total, 0) - paidAmount).toFixed(2)}
                                 </div>
 
                             </CardContent>
                             <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-                                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                                <Button onClick={handleSave}>Create Order</Button>
+                                <Button variant="outline" onClick={() => setIsModalOpen(false)}>{t.cancel}</Button>
+                                <Button onClick={handleSave}>{t.save}</Button>
                             </div>
                         </Card>
                     </div>

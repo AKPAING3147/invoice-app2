@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
 import { useAuthStore } from "@/app/store/useAccountStore";
+import { useLanguageStore } from "@/app/store/useLanguageStore";
+import { translations } from "@/lib/translations";
 import { toast } from "sonner";
 import { fetchCustomers, createCustomer, Customer } from "@/app/service/customer";
 
@@ -28,6 +31,9 @@ const Icons = {
 export function CustomerSection() {
     const router = useRouter();
     const { token, logout } = useAuthStore();
+    const { language } = useLanguageStore();
+    const t = translations[language];
+
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,11 +57,6 @@ export function CustomerSection() {
         else loadCustomers();
     }, [token, router]);
 
-    const handleLogout = () => {
-        logout();
-        router.push("/login");
-    };
-
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!token) return;
@@ -64,29 +65,21 @@ export function CustomerSection() {
             setCustomers(prev => [created, ...prev]);
             setIsModalOpen(false);
             setFormData({ name: "", email: "", phone: "" });
-            toast.success("Customer added successfully");
+            toast.success(t.customer_added);
         } catch (err: any) {
-            toast.error(err.message || "Failed to create customer");
+            toast.error(err.message || t.customer_create_fail);
         }
     };
 
     return (
         <div className="flex h-screen bg-muted/20 font-sans">
-            <aside className="w-64 bg-background border-r hidden md:flex flex-col p-4 space-y-4">
-                <h1 className="font-bold text-lg">InventoryApp</h1>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/dashboard")}>Dashboard</Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/product")}>Inventory</Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/voucher")}>Orders</Button>
-                <Button variant="secondary" className="w-full" onClick={() => router.push("/customer")}>Customers</Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/profile")}>Settings</Button>
-                <Button variant="outline" className="w-full mt-auto" onClick={handleLogout}>Logout</Button>
-            </aside>
+            <Sidebar />
 
             <main className="flex-1 p-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">Customers</h2>
+                    <h2 className="text-2xl font-bold">{t.customers}</h2>
                     <Button className="flex items-center gap-2" onClick={() => setIsModalOpen(true)}>
-                        <Icons.Plus className="h-4 w-4" /> Add Customer
+                        <Icons.Plus className="h-4 w-4" /> {t.add_customer}
                     </Button>
                 </div>
 
@@ -95,17 +88,17 @@ export function CustomerSection() {
                         <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                                 <tr>
-                                    <th className="p-4 text-left">Name</th>
-                                    <th className="p-4 text-left">Email</th>
-                                    <th className="p-4 text-left">Phone</th>
-                                    <th className="p-4 text-right">Total Spent</th>
+                                    <th className="p-4 text-left">{t.name}</th>
+                                    <th className="p-4 text-left">{t.email}</th>
+                                    <th className="p-4 text-left">{t.phone}</th>
+                                    <th className="p-4 text-right">{t.total_spent}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={4} className="p-4 text-center">Loading...</td></tr>
+                                    <tr><td colSpan={4} className="p-4 text-center">{t.loading}</td></tr>
                                 ) : customers.length === 0 ? (
-                                    <tr><td colSpan={4} className="p-4 text-center">No customers found.</td></tr>
+                                    <tr><td colSpan={4} className="p-4 text-center">{t.no_customers}</td></tr>
                                 ) : (
                                     customers.map((c) => (
                                         <tr key={c.id} className="border-t hover:bg-muted/20">
@@ -127,7 +120,7 @@ export function CustomerSection() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                         <Card className="w-full max-w-lg p-4">
                             <CardHeader className="flex justify-between items-center">
-                                <CardTitle>Add Customer</CardTitle>
+                                <CardTitle>{t.add_customer}</CardTitle>
                                 <Button variant="ghost" size="icon" onClick={() => setIsModalOpen(false)}>
                                     <Icons.X className="h-4 w-4" />
                                 </Button>
@@ -136,22 +129,22 @@ export function CustomerSection() {
                                 <CardContent className="space-y-4">
                                     <FieldGroup>
                                         <Field>
-                                            <FieldLabel>Name</FieldLabel>
+                                            <FieldLabel>{t.name}</FieldLabel>
                                             <Input value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
                                         </Field>
                                         <Field>
-                                            <FieldLabel>Email</FieldLabel>
+                                            <FieldLabel>{t.email}</FieldLabel>
                                             <Input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                                         </Field>
                                         <Field>
-                                            <FieldLabel>Phone</FieldLabel>
+                                            <FieldLabel>{t.phone}</FieldLabel>
                                             <Input value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
                                         </Field>
                                     </FieldGroup>
                                 </CardContent>
                                 <div className="flex justify-end gap-2 mt-2">
-                                    <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                                    <Button type="submit">save</Button>
+                                    <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>{t.cancel}</Button>
+                                    <Button type="submit">{t.save}</Button>
                                 </div>
                             </form>
                         </Card>

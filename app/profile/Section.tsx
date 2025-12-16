@@ -2,15 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/app/store/useAccountStore";
+import { useLanguageStore } from "@/app/store/useLanguageStore";
+import { translations } from "@/lib/translations";
 import { getUserProfile, changeName, changePassword, UserProfile } from "@/app/service/user";
 
 export function ProfileSection() {
     const router = useRouter();
     const { token, logout } = useAuthStore();
+    const { language } = useLanguageStore();
+    const t = translations[language];
+
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -53,59 +59,55 @@ export function ProfileSection() {
         } catch (e: any) { alert(e.message); }
     };
 
-    const handleLogout = () => {
-        logout();
-        router.push("/login");
-    };
+    return (
+        <div className="flex h-screen bg-muted/20 font-sans">
+            <Sidebar />
+            <main className="flex-1 p-6 space-y-6">
+                <h2 className="text-2xl font-bold">{t.my_profile}</h2>
 
-    return <div className="flex h-screen bg-muted/20 font-sans">
-        <aside className="w-64 bg-background border-r hidden md:flex flex-col p-4 space-y-4">
-            <h1 className="font-bold text-lg">InventoryApp</h1>
-            <Button variant="secondary" className="w-full" onClick={() => router.push("/dashboard")}>Dashboard</Button>
-            <Button variant="ghost" className="w-full" onClick={() => router.push("/product")}>Inventory</Button>
-            <Button variant="ghost" className="w-full" onClick={() => router.push("/voucher")}>Orders</Button>
-            <Button variant="secondary" className="w-full">Settings</Button>
-            <Button variant="outline" className="w-full mt-auto" onClick={handleLogout}>Logout</Button>
-        </aside>
-
-        <main className="flex-1 p-6 space-y-6">
-            <h2 className="text-2xl font-bold">Profile & Settings</h2>
-
-            {/* Profile Info */}
-            <Card>
-                <CardHeader><CardTitle>My Profile</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4">
-                        <div className="h-20 w-20 rounded-full bg-slate-200 flex items-center justify-center text-2xl font-bold">
-                            {profile?.name?.charAt(0) || "U"}
+                {/* Profile Info */}
+                <Card>
+                    <CardHeader><CardTitle>{t.my_profile}</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="h-20 w-20 rounded-full bg-slate-200 flex items-center justify-center text-2xl font-bold">
+                                {profile?.name?.charAt(0) || "U"}
+                            </div>
+                            <div>
+                                <p className="font-bold text-lg">{profile?.name}</p>
+                                <p className="text-muted-foreground">{profile?.email}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="font-bold text-lg">{profile?.name}</p>
-                            <p className="text-muted-foreground">{profile?.email}</p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
 
-            {/* Change Name */}
-            <Card>
-                <CardHeader><CardTitle>Update Name</CardTitle></CardHeader>
-                <CardContent className="space-y-4 max-w-md">
-                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Full Name" />
-                    <Button onClick={handleUpdateName}>Save Name</Button>
-                </CardContent>
-            </Card>
+                {/* Change Name */}
+                <Card>
+                    <CardHeader><CardTitle>{t.update_name}</CardTitle></CardHeader>
+                    <CardContent className="space-y-4 max-w-md">
+                        <label className="text-sm font-medium">{t.full_name}</label>
+                        <Input value={name} onChange={e => setName(e.target.value)} placeholder={t.full_name} />
+                        <Button onClick={handleUpdateName}>{t.save_name}</Button>
+                    </CardContent>
+                </Card>
 
-            {/* Change Password */}
-            <Card>
-                <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
-                <CardContent className="space-y-4 max-w-md">
-                    <Input type="password" placeholder="Old Password" value={passwords.old_password} onChange={e => setPasswords({ ...passwords, old_password: e.target.value })} />
-                    <Input type="password" placeholder="New Password" value={passwords.new_password} onChange={e => setPasswords({ ...passwords, new_password: e.target.value })} />
-                    <Input type="password" placeholder="Confirm New Password" value={passwords.new_password_confirmation} onChange={e => setPasswords({ ...passwords, new_password_confirmation: e.target.value })} />
-                    <Button onClick={handleUpdatePassword}>Update Password</Button>
-                </CardContent>
-            </Card>
-        </main>
-    </div>
+                {/* Change Password */}
+                <Card>
+                    <CardHeader><CardTitle>{t.change_password}</CardTitle></CardHeader>
+                    <CardContent className="space-y-4 max-w-md">
+                        <label className="text-sm font-medium">{t.old_password}</label>
+                        <Input type="password" placeholder={t.old_password} value={passwords.old_password} onChange={e => setPasswords({ ...passwords, old_password: e.target.value })} />
+
+                        <label className="text-sm font-medium">{t.new_password}</label>
+                        <Input type="password" placeholder={t.new_password} value={passwords.new_password} onChange={e => setPasswords({ ...passwords, new_password: e.target.value })} />
+
+                        <label className="text-sm font-medium">{t.confirm_password}</label>
+                        <Input type="password" placeholder={t.confirm_password} value={passwords.new_password_confirmation} onChange={e => setPasswords({ ...passwords, new_password_confirmation: e.target.value })} />
+
+                        <Button onClick={handleUpdatePassword}>{t.save_password}</Button>
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
+    );
 }

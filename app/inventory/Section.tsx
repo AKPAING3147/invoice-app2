@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Sidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
-import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/app/store/useAccountStore";
+import { useLanguageStore } from "@/app/store/useLanguageStore";
+import { translations } from "@/lib/translations";
 import { toast } from "sonner";
 import {
     fetchProducts,
@@ -48,6 +50,8 @@ const Icons = {
 export function Inventory() {
     const router = useRouter();
     const { token, logout } = useAuthStore();
+    const { language } = useLanguageStore();
+    const t = translations[language];
 
     const [inventory, setInventory] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);
@@ -69,10 +73,6 @@ export function Inventory() {
         setLoading(true);
         try {
             const data = await fetchProducts(token);
-            // The API returns { data: [...] } or just [...]? 
-            // Based on typical Laravel resources it might be { data: [...] }.
-            // Let's assume it returns the array or check response structure. 
-            // If data.data exists, use it, otherwise use data.
             const products = Array.isArray(data) ? data : data.data || [];
             setInventory(products);
         } catch (err: any) {
@@ -89,11 +89,6 @@ export function Inventory() {
             loadProducts();
         }
     }, [token, router]);
-
-    const handleLogout = () => {
-        logout();
-        router.push("/login");
-    };
 
     const handleAdd = () => {
         setEditingItem(null);
@@ -114,13 +109,13 @@ export function Inventory() {
 
     const handleDelete = async (id: number) => {
         if (!token) return;
-        if (window.confirm("Are you sure you want to delete this item?")) {
+        if (window.confirm(t.delete_confirm)) {
             try {
                 await deleteProduct(token, id);
                 setInventory((prev) => prev.filter((item) => item.id !== id));
-                toast.success("Product deleted successfully");
+                toast.success(t.deleted_success);
             } catch (err: any) {
-                toast.error(err.message || "Failed to delete product");
+                toast.error(err.message || t.failed_delete);
             }
         }
     };
@@ -133,7 +128,6 @@ export function Inventory() {
             if (editingItem) {
                 // Update
                 const updated = await updateProduct(token, editingItem.id, formData);
-                // If API returns the updated object
                 setInventory((prev) =>
                     prev.map((item) => (item.id === editingItem.id ? updated.data || updated : item))
                 );
@@ -144,45 +138,22 @@ export function Inventory() {
             }
             setIsModalOpen(false);
             loadProducts(); // Refresh to be sure
-            toast.success(editingItem ? "Product updated" : "Product created");
+            toast.success(editingItem ? t.updated_success : t.created_success);
         } catch (err: any) {
-            toast.error(err.message || "Operation failed");
+            toast.error(err.message || t.operation_failed);
         }
     };
 
-    // Status helper removed as per request
-
     return (
         <div className="flex h-screen bg-muted/20 font-sans">
-            {/* Sidebar */}
-            <aside className="w-64 bg-background border-r hidden md:flex flex-col p-4 space-y-4">
-                <h1 className="font-bold text-lg">InventoryApp</h1>
-                <Button variant="secondary" className="w-full" onClick={() => router.push("/dashboard")}>
-                    Dashboard
-                </Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/product")}>
-                    Inventory
-                </Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/voucher")}>
-                    Orders
-                </Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/customer")}>
-                    Customers
-                </Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/profile")}>
-                    Settings
-                </Button>
-                <Button variant="outline" className="w-full mt-auto" onClick={handleLogout}>
-                    Logout
-                </Button>
-            </aside>
+            <Sidebar />
 
             {/* Main */}
             <main className="flex-1 p-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">Inventory</h2>
+                    <h2 className="text-2xl font-bold">{t.inventory}</h2>
                     <Button className="flex items-center gap-2" onClick={handleAdd}>
-                        <Icons.Plus className="h-4 w-4" /> Add Product
+                        <Icons.Plus className="h-4 w-4" /> {t.add_product}
                     </Button>
                 </div>
 
@@ -193,19 +164,18 @@ export function Inventory() {
                         <table className="w-full text-sm">
                             <thead className="bg-muted/50">
                                 <tr>
-                                    <th className="p-4 text-left">Image</th>
-                                    <th className="p-4 text-left">Name</th>
-                                    {/* SKU/Category removed as API doesn't support them explicitly in this demo */}
-                                    <th className="p-4 text-left">Stock</th>
-                                    <th className="p-4 text-left">Price</th>
-                                    <th className="p-4 text-right">Actions</th>
+                                    <th className="p-4 text-left">{t.image}</th>
+                                    <th className="p-4 text-left">{t.name}</th>
+                                    <th className="p-4 text-left">{t.stock}</th>
+                                    <th className="p-4 text-left">{t.price}</th>
+                                    <th className="p-4 text-right">{t.action}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={5} className="p-4 text-center">Loading...</td></tr>
+                                    <tr><td colSpan={5} className="p-4 text-center">{t.loading}</td></tr>
                                 ) : inventory.length === 0 ? (
-                                    <tr><td colSpan={5} className="p-4 text-center">No products found.</td></tr>
+                                    <tr><td colSpan={5} className="p-4 text-center">{t.no_products}</td></tr>
                                 ) : (
                                     inventory.map((item) => (
                                         <tr key={item.id} className="border-t hover:bg-muted/20 transition-colors">
@@ -213,12 +183,12 @@ export function Inventory() {
                                                 {item.image ? (
                                                     <img src={item.image} alt={item.product_name} className="w-10 h-10 object-cover rounded" />
                                                 ) : (
-                                                    <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-xs">No img</div>
+                                                    <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-xs">{t.no_img}</div>
                                                 )}
                                             </td>
                                             <td className="p-4">{item.product_name}</td>
                                             <td className="p-4">
-                                                {item.stock === 0 ? <span className="text-red-500 font-medium">Out of Stock</span> : item.stock}
+                                                {item.stock === 0 ? <span className="text-red-500 font-medium">{t.out_of_stock}</span> : item.stock}
                                             </td>
                                             <td className="p-4">${Number(item.price).toFixed(2)}</td>
                                             <td className="p-4 text-right flex justify-end gap-2">
@@ -242,7 +212,7 @@ export function Inventory() {
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                         <Card className="w-full max-w-lg p-4">
                             <CardHeader className="flex justify-between items-center">
-                                <CardTitle>{editingItem ? "Edit Product" : "Add Product"}</CardTitle>
+                                <CardTitle>{editingItem ? t.edit_product : t.add_product}</CardTitle>
                                 <Button variant="ghost" size="icon" onClick={() => setIsModalOpen(false)}>
                                     <Icons.X className="h-4 w-4" />
                                 </Button>
@@ -251,7 +221,7 @@ export function Inventory() {
                                 <CardContent className="space-y-4">
                                     <FieldGroup>
                                         <Field>
-                                            <FieldLabel htmlFor="product_name">Product Name</FieldLabel>
+                                            <FieldLabel htmlFor="product_name">{t.product_name}</FieldLabel>
                                             <Input
                                                 id="product_name"
                                                 value={formData.product_name}
@@ -260,9 +230,8 @@ export function Inventory() {
                                             />
                                         </Field>
                                         <div className="grid grid-cols-2 gap-4">
-                                            {/* Removed SKU and Category fields since they aren't in API */}
                                             <Field>
-                                                <FieldLabel htmlFor="stock">Stock</FieldLabel>
+                                                <FieldLabel htmlFor="stock">{t.stock}</FieldLabel>
                                                 <Input
                                                     id="stock"
                                                     type="text"
@@ -276,7 +245,7 @@ export function Inventory() {
                                                 />
                                             </Field>
                                             <Field>
-                                                <FieldLabel htmlFor="price">Price</FieldLabel>
+                                                <FieldLabel htmlFor="price">{t.price}</FieldLabel>
                                                 <Input
                                                     id="price"
                                                     type="text"
@@ -292,7 +261,7 @@ export function Inventory() {
                                             </Field>
                                         </div>
                                         <Field>
-                                            <FieldLabel htmlFor="image">Image</FieldLabel>
+                                            <FieldLabel htmlFor="image">{t.image}</FieldLabel>
                                             <Input
                                                 id="image"
                                                 type="file"
@@ -313,9 +282,9 @@ export function Inventory() {
                                 </CardContent>
                                 <div className="flex justify-end gap-2 mt-2">
                                     <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
-                                        Cancel
+                                        {t.cancel}
                                     </Button>
-                                    <Button type="submit">{editingItem ? "Save" : "Add"}</Button>
+                                    <Button type="submit">{editingItem ? t.save : t.add}</Button>
                                 </div>
                             </form>
                         </Card>
@@ -325,4 +294,3 @@ export function Inventory() {
         </div>
     );
 }
-
