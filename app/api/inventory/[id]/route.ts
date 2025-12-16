@@ -26,7 +26,7 @@ export async function PUT(
         const { id } = await params;
         const productId = parseInt(id);
         const body = await request.json();
-        const { product_name, price, stock, image } = body;
+        const { product_name, price, stock, image, categoryId } = body;
 
         // Check ownership
         const existing = await prisma.product.findUnique({
@@ -46,8 +46,10 @@ export async function PUT(
                 product_name,
                 price: Number(price),
                 stock: Number(stock),
-                image // optional update
-            }
+                image,
+                categoryId: categoryId ? Number(categoryId) : null
+            },
+            include: { category: true }
         });
 
         return NextResponse.json(updated);

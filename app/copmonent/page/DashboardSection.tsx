@@ -14,6 +14,12 @@ import { fetchVouchers, Voucher } from '@/app/service/voucher';
 import { getUserProfile, UserProfile } from '@/app/service/user';
 import { Sidebar } from "@/components/Sidebar";
 import { Package, ShoppingCart, Users, Search, Bell } from "lucide-react";
+import dynamic from 'next/dynamic';
+
+const OverviewChart = dynamic(() => import('./OverviewChart').then(mod => mod.OverviewChart), {
+  loading: () => <div className="h-[350px] w-full flex items-center justify-center bg-muted/20 animate-pulse rounded-md">Loading chart...</div>,
+  ssr: false
+});
 
 export function DashboardSection() {
   const router = useRouter();
@@ -32,6 +38,7 @@ export function DashboardSection() {
 
   const [recentSales, setRecentSales] = useState<Voucher[]>([]);
   const [lowStock, setLowStock] = useState<Product[]>([]);
+  const [chartData, setChartData] = useState<any[]>([]);
 
   useEffect(() => {
     if (!token) {
@@ -48,11 +55,15 @@ export function DashboardSection() {
         if (statsRes.ok) {
           const data = await statsRes.json();
           setStats({
-            revenue: 0, // Keeping 0 for now as it needs voucher aggregation or another API field
+            revenue: data.revenue,
             orders: data.voucherCount,
             stock: data.productCount,
             customers: data.customerCount
           });
+          setChartData(data.salesTrend.map((d: any) => ({
+            ...d,
+            name: new Date(d.name).toLocaleDateString(language === 'mm' ? 'my-MM' : 'en-US', { weekday: 'short' })
+          })));
           setUser({ ...user, name: data.userName, email: user?.email || "" } as UserProfile);
         }
 
@@ -68,8 +79,8 @@ export function DashboardSection() {
         setRecentSales(vouchers.slice(0, 5));
 
         // Calculate Revenue manually from fetched vouchers for now
-        const revenue = vouchers.reduce((acc: number, v: any) => acc + (Number(v.total) || 0), 0);
-        setStats(prev => ({ ...prev, revenue: revenue }));
+        // const revenue = vouchers.reduce((acc: number, v: any) => acc + (Number(v.total) || 0), 0);
+        // setStats(prev => ({ ...prev, revenue: revenue }));
 
       } catch (e) {
         console.error("Dashboard load error", e);

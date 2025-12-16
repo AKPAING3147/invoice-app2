@@ -18,6 +18,12 @@ import {
     deleteProduct,
     Product
 } from "@/app/service/product";
+import {
+    Category,
+    fetchCategories,
+    createCategory,
+    deleteCategory
+} from "@/app/service/category";
 
 /* ---------------- ICONS ---------------- */
 const Icons = {
@@ -54,10 +60,13 @@ export function Inventory() {
     const t = translations[language];
 
     const [inventory, setInventory] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isCatModalOpen, setIsCatModalOpen] = useState(false);
+    const [newCatName, setNewCatName] = useState("");
     const [editingItem, setEditingItem] = useState<Product | null>(null);
 
     // We only track fields that the API seems to support based on the collection
@@ -66,6 +75,7 @@ export function Inventory() {
         price: 0,
         stock: 0,
         image: "" as string | null,
+        categoryId: "" as string | number,
     });
 
     const loadProducts = async () => {
@@ -73,8 +83,10 @@ export function Inventory() {
         setLoading(true);
         try {
             const data = await fetchProducts(token);
+            const cats = await fetchCategories(token);
             const products = Array.isArray(data) ? data : data.data || [];
             setInventory(products);
+            setCategories(Array.isArray(cats) ? cats : []);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -92,7 +104,7 @@ export function Inventory() {
 
     const handleAdd = () => {
         setEditingItem(null);
-        setFormData({ product_name: "", price: 0, stock: 0, image: null });
+        setFormData({ product_name: "", price: 0, stock: 0, image: null, categoryId: "" });
         setIsModalOpen(true);
     };
 
@@ -103,37 +115,81 @@ export function Inventory() {
             price: item.price,
             stock: item.stock || 0,
             image: item.image || null,
+            categoryId: item.categoryId || "",
         });
         setIsModalOpen(true);
     };
 
-    const handleDelete = async (id: number) => {
-        if (!token) return;
-        if (window.confirm(t.delete_confirm)) {
-            try {
-                await deleteProduct(token, id);
-                setInventory((prev) => prev.filter((item) => item.id !== id));
-                toast.success(t.deleted_success);
-            } catch (err: any) {
-                toast.error(err.message || t.failed_delete);
-            }
+    const handleAddCategory = async () => {
+        if (!newCatName.trim() || !token) return;
+        try {
+            const newCat = await createCategory(token, newCatName);
+            setCategories([...categories, newCat]);
+            setNewCatName("");
+            toast.success(t.created_success);
+        } catch (e: any) {
+            toast.error(e.message);
+        }
+    };
+
+    const handleDeleteCategory = async (id: number) => {
+        if (!token || !window.confirm(t.delete_cat_confirm)) return;
+        try {
+            await deleteCategory(token, id);
+            setCategories(categories.filter(c => c.id !== id));
+            toast.success(t.deleted_success);
+            loadProducts(); // Refresh products as their category might be nullified
+        } catch (e: any) {
+            toast.error(e.message);
+        }
+    };
+
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // ... (rest of the state and loadProducts function)
+
+    // Modified handleDelete to open modal
+    const handleDeleteClick = (id: number) => {
+        setDeleteId(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!token || !deleteId) return;
+        try {
+            await deleteProduct(token, deleteId);
+            setInventory((prev) => prev.filter((item) => item.id !== deleteId));
+            toast.success(t.deleted_success);
+        } catch (err: any) {
+            toast.error(err.message || t.failed_delete);
+        } finally {
+            setIsDeleteModalOpen(false);
+            setDeleteId(null);
         }
     };
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!token) return;
+        setIsSaving(true);
 
         try {
+            const payload = {
+                ...formData,
+                categoryId: formData.categoryId ? Number(formData.categoryId) : null
+            };
+
             if (editingItem) {
                 // Update
-                const updated = await updateProduct(token, editingItem.id, formData);
+                const updated = await updateProduct(token, editingItem.id, payload);
                 setInventory((prev) =>
                     prev.map((item) => (item.id === editingItem.id ? updated.data || updated : item))
                 );
             } else {
                 // Create
-                const created = await createProduct(token, formData);
+                const created = await createProduct(token, payload);
                 setInventory((prev) => [created.data || created, ...prev]);
             }
             setIsModalOpen(false);
@@ -141,6 +197,8 @@ export function Inventory() {
             toast.success(editingItem ? t.updated_success : t.created_success);
         } catch (err: any) {
             toast.error(err.message || t.operation_failed);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -152,9 +210,14 @@ export function Inventory() {
             <main className="flex-1 p-6">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-2xl font-bold">{t.inventory}</h2>
-                    <Button className="flex items-center gap-2" onClick={handleAdd}>
-                        <Icons.Plus className="h-4 w-4" /> {t.add_product}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setIsCatModalOpen(true)}>
+                            {t.manage_categories}
+                        </Button>
+                        <Button className="flex items-center gap-2" onClick={handleAdd}>
+                            <Icons.Plus className="h-4 w-4" /> {t.add_product}
+                        </Button>
+                    </div>
                 </div>
 
                 {error && <div className="text-red-500 mb-4">{error}</div>}
@@ -166,6 +229,7 @@ export function Inventory() {
                                 <tr>
                                     <th className="p-4 text-left">{t.image}</th>
                                     <th className="p-4 text-left">{t.name}</th>
+                                    <th className="p-4 text-left">{t.category}</th>
                                     <th className="p-4 text-left">{t.stock}</th>
                                     <th className="p-4 text-left">{t.price}</th>
                                     <th className="p-4 text-right">{t.action}</th>
@@ -173,7 +237,16 @@ export function Inventory() {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={5} className="p-4 text-center">{t.loading}</td></tr>
+                                    Array.from({ length: 7 }).map((_, i) => (
+                                        <tr key={i} className="border-t">
+                                            <td className="p-4"><div className="h-10 w-10 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-32 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-24 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-16 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-16 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-8 w-16 bg-muted animate-pulse rounded ml-auto" /></td>
+                                        </tr>
+                                    ))
                                 ) : inventory.length === 0 ? (
                                     <tr><td colSpan={5} className="p-4 text-center">{t.no_products}</td></tr>
                                 ) : (
@@ -187,6 +260,9 @@ export function Inventory() {
                                                 )}
                                             </td>
                                             <td className="p-4">{item.product_name}</td>
+                                            <td className="p-4 text-sm text-muted-foreground">
+                                                {item.category?.name || "-"}
+                                            </td>
                                             <td className="p-4">
                                                 {item.stock === 0 ? <span className="text-red-500 font-medium">{t.out_of_stock}</span> : item.stock}
                                             </td>
@@ -195,7 +271,7 @@ export function Inventory() {
                                                 <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
                                                     <Icons.Edit className="h-4 w-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                                                <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(item.id)}>
                                                     <Icons.Trash className="h-4 w-4 text-red-600" />
                                                 </Button>
                                             </td>
@@ -206,6 +282,24 @@ export function Inventory() {
                         </table>
                     </CardContent>
                 </Card>
+
+                {/* Confirm Delete Modal */}
+                {isDeleteModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <Card className="w-full max-w-sm p-4">
+                            <CardHeader>
+                                <CardTitle>{t.delete_confirm_title || "Confirm Delete"}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p>{t.delete_confirm || "Are you sure you want to delete this item?"}</p>
+                            </CardContent>
+                            <div className="flex justify-end gap-2 mt-4">
+                                <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>{t.cancel}</Button>
+                                <Button variant="destructive" onClick={confirmDelete}>{t.delete}</Button>
+                            </div>
+                        </Card>
+                    </div>
+                )}
 
                 {/* Modal */}
                 {isModalOpen && (
@@ -229,6 +323,21 @@ export function Inventory() {
                                                 required
                                             />
                                         </Field>
+
+                                        <Field>
+                                            <FieldLabel>{t.category}</FieldLabel>
+                                            <select
+                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                                value={formData.categoryId}
+                                                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                                            >
+                                                <option value="">{t.select_category}</option>
+                                                {categories.map(c => (
+                                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                                ))}
+                                            </select>
+                                        </Field>
+
                                         <div className="grid grid-cols-2 gap-4">
                                             <Field>
                                                 <FieldLabel htmlFor="stock">{t.stock}</FieldLabel>
@@ -284,9 +393,48 @@ export function Inventory() {
                                     <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
                                         {t.cancel}
                                     </Button>
-                                    <Button type="submit">{editingItem ? t.save : t.add}</Button>
+                                    <Button type="submit" disabled={isSaving}>
+                                        {isSaving ? "Saving..." : editingItem ? t.save : t.add}
+                                    </Button>
                                 </div>
                             </form>
+                        </Card>
+                    </div>
+                )}
+
+
+                {/* Category Modal */}
+                {isCatModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <Card className="w-full max-w-md p-4">
+                            <CardHeader className="flex justify-between items-center">
+                                <CardTitle>{t.manage_categories}</CardTitle>
+                                <Button variant="ghost" size="icon" onClick={() => setIsCatModalOpen(false)}>
+                                    <Icons.X className="h-4 w-4" />
+                                </Button>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex gap-2">
+                                    <Input
+                                        placeholder={t.new_category}
+                                        value={newCatName}
+                                        onChange={(e) => setNewCatName(e.target.value)}
+                                    />
+                                    <Button onClick={handleAddCategory}>{t.add}</Button>
+                                </div>
+                                <div className="border rounded-md divide-y max-h-60 overflow-y-auto">
+                                    {categories.length === 0 ? <p className="p-4 text-center text-sm text-muted-foreground">Empty</p> :
+                                        categories.map(c => (
+                                            <div key={c.id} className="flex justify-between items-center p-3">
+                                                <span>{c.name}</span>
+                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(c.id)}>
+                                                    <Icons.Trash className="h-4 w-4 text-red-500" />
+                                                </Button>
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            </CardContent>
                         </Card>
                     </div>
                 )}

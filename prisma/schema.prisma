@@ -15,6 +15,8 @@ model User {
   products Product[]
   customers Customer[]
   vouchers Voucher[]
+  categories Category[]
+  stockLogs StockLog[]
 }
 
 model Product {
@@ -25,6 +27,9 @@ model Product {
   image        String?
   userId       Int
   user         User    @relation(fields: [userId], references: [id])
+  categoryId   Int?
+  category     Category? @relation(fields: [categoryId], references: [id])
+  stockLogs    StockLog[]
 }
 
 model Customer {
@@ -50,4 +55,23 @@ model Voucher {
   userId     Int
   user       User     @relation(fields: [userId], references: [id])
   items      String   // Storing items as JSON string for simplicity
+}
+
+model Category {
+  id      Int       @id @default(autoincrement())
+  name    String
+  userId  Int
+  user    User      @relation(fields: [userId], references: [id])
+  products Product[]
+}
+
+model StockLog {
+  id        Int      @id @default(autoincrement())
+  change    Int
+  reason    String? // "restock", "sale", "correction"
+  date      DateTime @default(now())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
 }

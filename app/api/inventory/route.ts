@@ -25,9 +25,10 @@ export async function GET(request: Request) {
     try {
         const products = await prisma.product.findMany({
             where: { userId },
+            include: { category: true },
             orderBy: { id: 'desc' }
         });
-        return NextResponse.json(products); // Return array directly to match frontend expectation
+        return NextResponse.json(products);
     } catch (error: any) {
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
-        const { product_name, price, stock, image } = body;
+        const { product_name, price, stock, image, categoryId } = body;
 
         if (!product_name || price === undefined) {
             return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
@@ -53,8 +54,10 @@ export async function POST(request: Request) {
                 price: Number(price),
                 stock: Number(stock || 0),
                 image: image || null,
+                categoryId: categoryId ? Number(categoryId) : null,
                 userId
-            }
+            },
+            include: { category: true }
         });
 
         return NextResponse.json(product, { status: 201 });

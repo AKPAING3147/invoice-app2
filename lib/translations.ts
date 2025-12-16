@@ -58,6 +58,11 @@ export const translations = {
         no_img: "No img",
         delete_confirm: "Are you sure you want to delete this item?",
         deleted_success: "Product deleted successfully",
+        category: "Category",
+        manage_categories: "Manage Categories",
+        new_category: "New Category",
+        select_category: "Select Category",
+        delete_cat_confirm: "Delete this category?",
         updated_success: "Product updated",
         created_success: "Product created",
         operation_failed: "Operation failed",
@@ -92,6 +97,8 @@ export const translations = {
 
         // Print
         print_title: "Voucher / Invoice",
+        overview: "Overview",
+        download_pdf: "Download PDF",
     },
     mm: {
         dashboard: "ဒက်ရှ်ဘုတ်",
@@ -152,6 +159,11 @@ export const translations = {
         no_img: "ပုံမရှိ",
         delete_confirm: "ဤပစ္စည်းကို ဖျက်ရန် သေချာပါသလား?",
         deleted_success: "ကုန်ပစ္စည်းကို ဖျက်လိုက်ပါပြီ",
+        category: "အမျိုးအစား",
+        manage_categories: "အမျိုးအစားများ စီမံရန်",
+        new_category: "အမျိုးအစားသစ်",
+        select_category: "အမျိုးအစား ရွေးပါ",
+        delete_cat_confirm: "ဤအမျိုးအစားကို ဖျက်မည်လား?",
         updated_success: "ကုန်ပစ္စည်းကို ပြင်ဆင်ပြီးပါပြီ",
         created_success: "ကုန်ပစ္စည်း အသစ်ထည့်ပြီးပါပြီ",
         operation_failed: "လုပ်ဆောင်မှု မအောင်မြင်ပါ",
@@ -186,5 +198,7 @@ export const translations = {
 
         // Print
         print_title: "ဘောက်ချာ / ပြေစာ",
+        overview: "ခြုံငုံသုံးသပ်ချက်",
+        download_pdf: "PDF ဒေါင်းလုပ်",
     }
 };

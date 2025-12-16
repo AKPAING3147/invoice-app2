@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { fetchVouchers, createVoucher, Voucher, VoucherItem } from "@/app/service/voucher";
 import { fetchCustomers, Customer } from "@/app/service/customer";
 import { fetchProducts, Product } from "@/app/service/product";
+import { InvoicePDF } from '../copmonent/page/InvoicePDF';
 
 const Icons = {
     Plus: ({ className }: React.SVGProps<SVGSVGElement>) => (
@@ -52,6 +53,7 @@ export function VoucherSection() {
     const [receiveDate, setReceiveDate] = useState<string>("");
     const [paidAmount, setPaidAmount] = useState<number>(0);
     const [searchTerm, setSearchTerm] = useState(""); // Search Feature
+    const [isSaving, setIsSaving] = useState(false);
 
     const loadData = async () => {
         if (!token) return;
@@ -113,6 +115,7 @@ export function VoucherSection() {
         const statusElement = document.getElementById("voucher-status") as HTMLSelectElement;
         const status = statusElement ? statusElement.value : "UNPAID";
 
+        setIsSaving(true);
         try {
             const newVoucher = await createVoucher(token!, {
                 voucher_no: voucherNo,
@@ -134,6 +137,8 @@ export function VoucherSection() {
             toast.success("Voucher created");
         } catch (err: any) {
             toast.error(err.message || "Failed to create voucher");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -194,6 +199,24 @@ export function VoucherSection() {
         }
     };
 
+    const handleDownloadPDF = async (voucher: Voucher) => {
+        try {
+            const { pdf } = await import('@react-pdf/renderer');
+            const blob = await pdf(<InvoicePDF voucher={voucher} />).toBlob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Invoice-${voucher.voucher_no}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error(e);
+            toast.error("Failed to generate PDF");
+        }
+    };
+
     const filteredVouchers = vouchers.filter(v =>
         v.voucher_no.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ((v as any).customer?.name || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -236,7 +259,17 @@ export function VoucherSection() {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={7} className="p-4 text-center">Loading...</td></tr>
+                                    Array.from({ length: 7 }).map((_, i) => (
+                                        <tr key={i} className="border-t">
+                                            <td className="p-4"><div className="h-4 w-24 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-32 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-24 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-24 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-6 w-16 bg-muted animate-pulse rounded mx-auto" /></td>
+                                            <td className="p-4"><div className="h-10 w-20 bg-muted animate-pulse rounded ml-auto" /></td>
+                                            <td className="p-4"><div className="h-8 w-16 bg-muted animate-pulse rounded" /></td>
+                                        </tr>
+                                    ))
                                 ) : filteredVouchers.length === 0 ? (
                                     <tr><td colSpan={7} className="p-4 text-center">No orders found.</td></tr>
                                 ) : (
@@ -255,8 +288,9 @@ export function VoucherSection() {
                                                 <div>${Number(v.total).toFixed(2)}</div>
                                                 <div className="text-xs text-muted-foreground">{t.paid}: ${(v.paidAmount || 0).toFixed(2)}</div>
                                             </td>
-                                            <td className="p-4">
-                                                <Button variant="outline" size="sm" onClick={() => handlePrint(v)}>Print</Button>
+                                            <td className="p-4 flex gap-2">
+                                                <Button variant="outline" size="sm" onClick={() => handlePrint(v)}>{t.print}</Button>
+                                                <Button variant="ghost" size="sm" onClick={() => handleDownloadPDF(v)}>PDF</Button>
                                             </td>
                                         </tr>
                                     ))
@@ -403,7 +437,9 @@ export function VoucherSection() {
                             </CardContent>
                             <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
                                 <Button variant="outline" onClick={() => setIsModalOpen(false)}>{t.cancel}</Button>
-                                <Button onClick={handleSave}>{t.save}</Button>
+                                <Button onClick={handleSave} disabled={isSaving}>
+                                    {isSaving ? "Saving..." : t.save}
+                                </Button>
                             </div>
                         </Card>
                     </div>

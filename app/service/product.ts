@@ -6,6 +6,8 @@ export interface Product {
     price: number;
     stock: number;
     image: string | null;
+    categoryId?: number | null;
+    category?: { id: number; name: string };
     created_at: string;
     updated_at: string;
 }
@@ -23,6 +25,7 @@ export interface CreateProductData {
     price: number;
     stock?: number;
     image?: string | null;
+    categoryId?: number | null;
 }
 
 export interface UpdateProductData {
@@ -30,6 +33,7 @@ export interface UpdateProductData {
     price?: number;
     stock?: number;
     image?: string | null;
+    categoryId?: number | null;
 }
 
 export const fetchProducts = async (token: string, params: ProductParams = {}) => {

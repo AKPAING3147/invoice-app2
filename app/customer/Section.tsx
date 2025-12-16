@@ -36,6 +36,7 @@ export function CustomerSection() {
 
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [loading, setLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [formData, setFormData] = useState<Customer>({ name: "", email: "", phone: "" });
 
@@ -60,6 +61,7 @@ export function CustomerSection() {
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!token) return;
+        setIsSaving(true);
         try {
             const created = await createCustomer(token, formData);
             setCustomers(prev => [created, ...prev]);
@@ -68,6 +70,8 @@ export function CustomerSection() {
             toast.success(t.customer_added);
         } catch (err: any) {
             toast.error(err.message || t.customer_create_fail);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -96,7 +100,14 @@ export function CustomerSection() {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={4} className="p-4 text-center">{t.loading}</td></tr>
+                                    Array.from({ length: 7 }).map((_, i) => (
+                                        <tr key={i} className="border-t">
+                                            <td className="p-4"><div className="h-4 w-32 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-40 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-24 bg-muted animate-pulse rounded" /></td>
+                                            <td className="p-4"><div className="h-4 w-16 bg-muted animate-pulse rounded ml-auto" /></td>
+                                        </tr>
+                                    ))
                                 ) : customers.length === 0 ? (
                                     <tr><td colSpan={4} className="p-4 text-center">{t.no_customers}</td></tr>
                                 ) : (
@@ -144,7 +155,9 @@ export function CustomerSection() {
                                 </CardContent>
                                 <div className="flex justify-end gap-2 mt-2">
                                     <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>{t.cancel}</Button>
-                                    <Button type="submit">{t.save}</Button>
+                                    <Button type="submit" disabled={isSaving}>
+                                        {isSaving ? "Saving..." : t.save}
+                                    </Button>
                                 </div>
                             </form>
                         </Card>
