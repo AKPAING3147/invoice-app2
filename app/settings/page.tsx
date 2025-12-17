@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/Sidebar";
+import { Sidebar, MobileSidebar } from "@/components/Sidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/app/store/useAccountStore";
 import { useLanguageStore } from "@/app/store/useLanguageStore";
@@ -25,7 +25,10 @@ export default function SettingsPage() {
         <div className="flex h-screen bg-muted/20 font-sans">
             <Sidebar />
             <main className="flex-1 p-6 space-y-6">
-                <h2 className="text-2xl font-bold">{t.settings}</h2>
+                <div className="flex items-center gap-2">
+                    <MobileSidebar />
+                    <h2 className="text-2xl font-bold">{t.settings}</h2>
+                </div>
 
                 <Card>
                     <CardHeader>

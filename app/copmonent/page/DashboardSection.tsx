@@ -12,7 +12,7 @@ import { translations } from "@/lib/translations";
 import { fetchProducts, Product } from '@/app/service/product';
 import { fetchVouchers, Voucher } from '@/app/service/voucher';
 import { getUserProfile, UserProfile } from '@/app/service/user';
-import { Sidebar } from "@/components/Sidebar";
+import { Sidebar, MobileSidebar } from "@/components/Sidebar";
 import { Package, ShoppingCart, Users, Search, Bell } from "lucide-react";
 import dynamic from 'next/dynamic';
 
@@ -26,6 +26,8 @@ export function DashboardSection() {
   const { token, logout } = useAuthStore();
   const { language } = useLanguageStore();
   const t = translations[language];
+
+  // ... (keeping existing state and effects same)
 
   const [user, setUser] = useState<UserProfile | null>(null);
 
@@ -98,7 +100,10 @@ export function DashboardSection() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="h-16 border-b border-border/40 bg-background/95 backdrop-blur flex items-center justify-between px-6 z-10">
-          <h1 className="text-lg font-semibold">{t.dashboard}</h1>
+          <div className="flex items-center gap-2">
+            <MobileSidebar />
+            <h1 className="text-lg font-semibold">{t.dashboard}</h1>
+          </div>
 
           <div className="flex items-center gap-4">
             <div className="relative w-64 hidden sm:block">

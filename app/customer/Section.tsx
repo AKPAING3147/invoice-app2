@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/Sidebar";
+import { Sidebar, MobileSidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -81,7 +81,10 @@ export function CustomerSection() {
 
             <main className="flex-1 p-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">{t.customers}</h2>
+                    <div className="flex items-center gap-2">
+                        <MobileSidebar />
+                        <h2 className="text-2xl font-bold">{t.customers}</h2>
+                    </div>
                     <Button className="flex items-center gap-2" onClick={() => setIsModalOpen(true)}>
                         <Icons.Plus className="h-4 w-4" /> {t.add_customer}
                     </Button>

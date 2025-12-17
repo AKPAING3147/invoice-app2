@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/Sidebar";
+import { Sidebar, MobileSidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -228,7 +228,10 @@ export function VoucherSection() {
 
             <main className="flex-1 p-6">
                 <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold">{t.orders}</h2>
+                    <div className="flex items-center gap-2">
+                        <MobileSidebar />
+                        <h2 className="text-2xl font-bold">{t.orders}</h2>
+                    </div>
                     <div className="flex gap-2">
                         <input
                             type="text"
